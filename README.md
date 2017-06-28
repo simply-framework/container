@@ -1,5 +1,9 @@
 # Dependency Injection Container #
 
+[![Travis](https://img.shields.io/travis/simply-framework/container.svg?style=flat-square)](https://travis-ci.org/simply-framework/container)
+[![Scrutinizer](https://img.shields.io/scrutinizer/g/simply-framework/container.svg?style=flat-square)](https://scrutinizer-ci.com/g/simply-framework/container/)
+[![Scrutinizer Coverage](https://img.shields.io/scrutinizer/coverage/g/simply-framework/container.svg?style=flat-square)](https://scrutinizer-ci.com/g/simply-framework/container/)
+
 This package provides a [PSR-11](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-11-container.md)
 compatible dependency injection container that relies heavily on PHP 
 configuration via scalar arrays rather than anonymous functions.
