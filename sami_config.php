@@ -9,8 +9,16 @@ $iterator = Finder::create()
     ->name('*.php')
     ->in(__DIR__ . '/src');
 
-return new Sami($iterator, [
-    'title'                => 'Dependency Injection Container',
+$theme = getenv('SAMI_THEME');
+$settings = [];
+
+if ($theme) {
+    $settings['theme'] = basename($theme);
+    $settings['template_dirs'] = [dirname($theme)];
+}
+
+return new Sami($iterator, $settings + [
+    'title'                => 'Dependency Injection Container API',
     'build_dir'            => __DIR__ . '/build/doc',
     'cache_dir'            => __DIR__ . '/build/cache',
     'remote_repository'    => new GitHubRemoteRepository('simply-framework/container', __DIR__),
