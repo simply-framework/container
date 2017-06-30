@@ -17,6 +17,6 @@ The API documentation is available at: http://simply.riimu.net/api/container
 
 ## Credits ##
 
-This library is copyright 2017 to Riikka Kalliomäki.
+This library is Copyright (c) 2017 Riikka Kalliomäki.
 
 See LICENSE for license and copying information.

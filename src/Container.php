@@ -12,7 +12,7 @@ use Simply\Container\Exception\NotFoundException;
  * Dependency Injection Container that supports different types of values.
  *
  * @author Riikka Kalliomäki <riikka.kalliomaki@gmail.com>
- * @copyright Copyright (c) 2017, Riikka Kalliomäki
+ * @copyright Copyright (c) 2017 Riikka Kalliomäki
  * @license http://opensource.org/licenses/mit-license.php MIT License
  */
 class Container implements ContainerInterface, \ArrayAccess

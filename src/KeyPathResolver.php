@@ -7,6 +7,10 @@ use Simply\Container\Exception\NotFoundException;
 
 /**
  * Provides methods for traversing variables according to a key path.
+ *
+ * @author Riikka Kalliomäki <riikka.kalliomaki@gmail.com>
+ * @copyright Copyright (c) 2017 Riikka Kalliomäki
+ * @license http://opensource.org/licenses/mit-license.php MIT License
  */
 class KeyPathResolver
 {
