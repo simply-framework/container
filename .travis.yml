@@ -7,19 +7,21 @@ php:
 
 cache:
   directories:
-  - vendor
+    - vendor
 
 before_install:
-  - phpenv config-rm xdebug.ini
+  - export XDEBUG="/home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini"
+  - mv -v "$XDEBUG" "$XDEBUG.disabled"
 
 install:
-  - travis_retry composer update --no-interaction
+  - travis_retry composer update -a --no-interaction
   - travis_retry wget https://scrutinizer-ci.com/ocular.phar
 
 script:
-  - phpdbg -qrr vendor/phpunit/phpunit/phpunit --coverage-clover=coverage.clover --coverage-text;
   - vendor/bin/phpcs --standard=PSR2 src tests
   - vendor/bin/php-cs-fixer fix -v --dry-run --allow-risky=yes --using-cache=no
+  - mv -v "$XDEBUG.disabled" "$XDEBUG"
+  - vendor/bin/phpunit --coverage-clover=coverage.clover --coverage-text
 
 after_script:
-  - php ocular.phar code-coverage:upload --format=php-clover coverage.clover;
+  - php ocular.phar code-coverage:upload --format=php-clover coverage.clover
