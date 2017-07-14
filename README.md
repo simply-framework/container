@@ -13,7 +13,7 @@ The container also implements container delegation pattern as described in
 [container-interop](https://github.com/container-interop/container-interop/blob/master/docs/Delegate-lookup.md)
 standard.
 
-The API documentation is available at: http://simply.riimu.net/api/container
+The API documentation is available at: http://simply.riimu.net/api/container/
 
 ## Credits ##
 
