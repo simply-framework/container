@@ -15,7 +15,7 @@ use Simply\Container\Exception\NotFoundException;
 /**
  * ContainerTest.
  * @author Riikka Kalliomäki <riikka.kalliomaki@gmail.com>
- * @copyright Copyright (c) 2018 Riikka Kalliomäki
+ * @copyright Copyright (c) 2017-2018 Riikka Kalliomäki
  * @license http://opensource.org/licenses/mit-license.php MIT License
  */
 class ContainerTest extends TestCase

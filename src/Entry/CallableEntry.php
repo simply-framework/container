@@ -18,7 +18,7 @@ class CallableEntry implements EntryInterface
 
     /**
      * CallableEntry constructor.
-     * @param mixed $callable The callable used to determine the value for the entry
+     * @param callable $callable The callable used to determine the value for the entry
      */
     public function __construct(callable $callable)
     {

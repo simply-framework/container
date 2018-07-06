@@ -48,7 +48,7 @@ class Container implements ContainerInterface, \ArrayAccess
      * Sets the delegate container that is provided for dependency resolution.
      * @param ContainerInterface $delegate Delegate container to use for dependency resolution
      */
-    public function setDelegate(ContainerInterface $delegate)
+    public function setDelegate(ContainerInterface $delegate): void
     {
         $this->delegate = $delegate;
     }
@@ -82,7 +82,7 @@ TEMPLATE;
      * Loads the cache parameters for all entries.
      * @throws ContainerException If the container contains entries that cannot be cached
      */
-    private function loadCacheParameters()
+    private function loadCacheParameters(): void
     {
         foreach ($this->types as $id => $class) {
             if (!isset($this->entryCache[$id])) {
@@ -125,7 +125,7 @@ TEMPLATE;
      * @param EntryInterface $type The container entry to add
      * @throws ContainerException If trying to add an entry to an identifier that already exists
      */
-    public function addEntry(string $id, EntryInterface $type)
+    public function addEntry(string $id, EntryInterface $type): void
     {
         if (isset($this->types[$id])) {
             throw new ContainerException("Entry for identifier '$id' already exists");

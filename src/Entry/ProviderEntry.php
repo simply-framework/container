@@ -31,7 +31,25 @@ class ProviderEntry implements EntryInterface
 
         [$provider, $method] = $providerMethod;
 
+        $this->setProvider($provider);
+        $this->setMethod($method);
+    }
+
+    /**
+     * Sets the provider class based on the given provider instance.
+     * @param object $provider The provider instance
+     */
+    private function setProvider(object $provider): void
+    {
         $this->provider = \get_class($provider);
+    }
+
+    /**
+     * Sets the method to call for the provider instance.
+     * @param string $method The method to call for the provider
+     */
+    private function setMethod(string $method): void
+    {
         $this->method = $method;
     }
 
