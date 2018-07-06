@@ -3,172 +3,99 @@
 namespace Simply\Container;
 
 use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\NotFoundExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Simply\Container\Entry\CallableEntry;
+use Simply\Container\Entry\EntryInterface;
+use Simply\Container\Entry\FactoryEntry;
+use Simply\Container\Entry\MixedEntry;
+use Simply\Container\Entry\ProviderEntry;
+use Simply\Container\Exception\ContainerException;
+use Simply\Container\Exception\NotFoundException;
 
+/**
+ * ContainerTest.
+ * @author Riikka Kalliomäki <riikka.kalliomaki@gmail.com>
+ * @copyright Copyright (c) 2018 Riikka Kalliomäki
+ * @license http://opensource.org/licenses/mit-license.php MIT License
+ */
 class ContainerTest extends TestCase
 {
-    public function testCallChaining()
-    {
-        $container = (new Container())
-            ->set(['standard' => 'standard entry'])
-            ->setValues(['value' => 'value entry', 'injection_argument' => ['injection' => 'injection value']])
-            ->setBlueprints([Container::class => []])
-            ->setFactories(['factory' => function () {
-                return 'factory entry';
-            }])
-            ->setInjections([Container::class => ['set' => ['injection_argument']]]);
-
-        $this->assertSame('standard entry', $container->get('standard'));
-        $this->assertSame('value entry', $container->get('value'));
-        $this->assertSame('factory entry', $container->get('factory'));
-
-        $blueprint = $container->get(Container::class);
-        $this->assertInstanceOf(Container::class, $blueprint);
-        $this->assertSame('injection value', $blueprint->get('injection'));
-    }
-
     public function testStandardTypeValue()
     {
-        $container = new Container();
-        $container->set(['foo' => 'bar']);
-
-        $this->assertSame('bar', $container->get('foo'));
+        $this->withContainer([
+            'foo' => 'bar',
+        ], function (Container $container) {
+            $this->assertSame('bar', $container->get('foo'));
+        });
     }
 
-    public function testStandardTypeValueWithInvokable()
+    public function testStandardTypeValueWithClosure()
     {
         $number = 1;
 
         $callable = function () use (& $number) {
-            $number += 1;
-            return $number;
+            return $number++;
         };
 
-        $container = new Container();
-        $container->set(['callable' => $callable]);
+        $container = $this->getContainer([
+            'callable' => $callable,
+        ]);
 
-        $this->assertSame(2, $container->get('callable'));
-        $this->assertSame(2, $container->get('callable'));
+        $this->assertSame(1, $container->get('callable'));
+        $this->assertSame(1, $container->get('callable'));
         $this->assertSame(2, $number);
     }
 
-    public function testPlainTypeValue()
+    public function testUncacheableEntry()
     {
-        $callable = function () {
-            return true;
-        };
+        $container = $this->getContainer([
+            'callable' => function () {
+                return 'foobar';
+            },
+        ]);
 
-        $container = new Container();
-        $container->setValues(['callable' => $callable]);
-
-        $this->assertSame($callable, $container->get('callable'));
+        $this->expectException(ContainerException::class);
+        $container->getCacheFile();
     }
 
     public function testFactoryTypeValue()
     {
-        $number = 1;
-
-        $callable = function () use (& $number) {
-            $number += 1;
-            return $number;
-        };
-
-        $container = new Container();
-        $container->setFactories(['callable' => $callable]);
-
-        $this->assertSame(2, $container->get('callable'));
-        $this->assertSame(3, $container->get('callable'));
-        $this->assertSame(3, $number);
-    }
-
-    public function testBlueprintTypeValue()
-    {
-        $container = new Container();
-        $time = date('r');
-
-        $container['current_time'] = $time;
-        $container->setBlueprints(['foo' => [
-            'class'       => \DateTime::class,
-            '__construct' => ['current_time'],
-        ]]);
-
-        $instance = $container->get('foo');
-
-        $this->assertInstanceOf(\DateTime::class, $instance);
-        $this->assertSame($time, $instance->format('r'));
-        $this->assertSame($instance, $container->get('foo'));
-    }
-
-    public function testInjections()
-    {
-        $container = new Container();
-        $time = date('r');
-
-        $container['current_time'] = $time;
-        $container['modification'] = '+1 hour';
-        $container->setBlueprints(['foo' => [
-            'class'       => \DateTime::class,
-            '__construct' => ['current_time'],
-            ['modify', 'modification'],
-        ]]);
-
-        $container->setInjections([
-            \DateTimeInterface::class => ['modify' => ['modification']],
-        ]);
-
-        $instance = $container->get('foo');
-        $this->assertSame(date('r', strtotime('+2 hours', strtotime($time))), $instance->format('r'));
-    }
-
-    public function testIdentifierPath()
-    {
-        $class = new \stdClass();
-        $class->normalValue = 'foo';
-        $class->nullValue = null;
-
-        $arrayObject = new \ArrayObject(['foo' => 'bar']);
-
-        $subContainer = new Container();
-        $subContainer->set(['id' => 'entry']);
-
-        $magic = new class() {
-            private $data = ['priv' => 'value'];
-
-            public function __isset($name)
+        $testClass = new class() {
+            public static function getDate(): \DateTime
             {
-                return isset($this->data[$name]);
-            }
-
-            public function __get($name)
-            {
-                return $this->data[$name];
+                return new \DateTime();
             }
         };
 
-        $container = new Container();
-        $container->set([
-            'array'       => ['key' => 'value'],
-            'class'       => $class,
-            'container'   => $subContainer,
-            'arrayObject' => $arrayObject,
-            'magic'       => $magic,
-        ]);
+        $callable = [\get_class($testClass), 'getDate'];
 
-        $this->assertSame('value', $container->getPath('array.key'));
-        $this->assertSame('foo', $container->getPath('class.normalValue'));
-        $this->assertNull($container->getPath('class.nullValue'));
-        $this->assertSame('entry', $container->getPath('container.id'));
-        $this->assertSame('bar', $container->getPath('arrayObject.foo'));
-        $this->assertSame('value', $container->getPath('magic.priv'));
+        $this->withContainer([
+            'cached' => new CallableEntry($callable),
+            'uncached' => new FactoryEntry(new CallableEntry($callable)),
+        ], function (Container $container) {
+            $cached = $container->get('cached');
+            $uncached = $container->get('uncached');
+
+            $this->assertSame($cached, $container->get('cached'));
+            $this->assertNotSame($uncached, $container->get('uncached'));
+        });
     }
 
-    public function testIdentifierPathDefaultValue()
+    public function testProviderTypeValue()
     {
-        $container = new Container();
-        $container->set(['foo' => []]);
+        $testClass = new class() extends AbstractEntryProvider {
+            public function getFoo()
+            {
+                return 'foo';
+            }
+        };
 
-        $this->assertSame('baz', $container->getPath('foo.bar', 'baz'));
+        $this->withContainer([
+            \get_class($testClass) => new CallableEntry([\get_class($testClass), 'initialize']),
+            'foo_value' => new ProviderEntry([$testClass, 'getFoo']),
+        ], function (Container $container) {
+            $this->assertSame('foo', $container->get('foo_value'));
+        });
     }
 
     public function testArrayAccess()
@@ -188,65 +115,79 @@ class ContainerTest extends TestCase
     public function testDuplicateKeys()
     {
         $container = new Container();
-        $container->set(['foo' => 'bar']);
+        $container->addEntry('foo', new MixedEntry('bar'));
 
-        $this->expectException(ContainerExceptionInterface::class);
-        $container->set(['foo' => 'bar']);
-    }
-
-    public function testDuplicateInjections()
-    {
-        $container = new Container();
-        $container->setInjections([\DateTimeInterface::class => ['modify' => ['modification']]]);
-
-        $this->expectException(ContainerExceptionInterface::class);
-        $container->setInjections([\DateTimeInterface::class => ['modify' => ['modification']]]);
+        $this->expectException(ContainerException::class);
+        $container->addEntry('foo', new MixedEntry('bar'));
     }
 
     public function testInvalidKey()
     {
         $container = new Container();
 
-        $this->expectException(ContainerExceptionInterface::class);
+        $this->expectException(NotFoundException::class);
         $container->get('foo');
     }
 
-    public function testPathNotFound()
+    public function testContainerDelegation()
     {
-        $container = new Container();
-        $container->set(['foo' => ['bar' => 'baz']]);
+        $container = $this->getContainer(['foo' => 'bar']);
+        $delegate = $this->getContainer(['other' => 'value']);
 
-        $this->expectException(NotFoundExceptionInterface::class);
-        $container->getPath('foo.baz');
+        $container->setDelegate($delegate);
+        $container['callable'] = function (ContainerInterface $container) use ($delegate) {
+            $this->assertSame($delegate, $container);
+            $this->assertTrue($container->has('other'));
+            $this->assertSame('value', $container->get('other'));
+
+            return 'called';
+        };
+
+        $this->assertSame('called', $container->get('callable'));
     }
 
-    public function testPathNotFoundInObject()
+    public function testDoubleCaching()
     {
-        $object = new \stdClass();
-        $object->bar = 'baz';
+        $this->withContainer([
+            'foo' => 'bar',
+        ], function (Container $container) {
+            $container->addEntry('bar', new MixedEntry('baz'));
+            $cache = $container->getCacheFile();
 
-        $container = new Container();
-        $container->set(['foo' => $object]);
+            /** @var Container $cached */
+            $cached = eval(substr($cache, 5));
 
-        $this->expectException(NotFoundExceptionInterface::class);
-        $container->getPath('foo.baz');
+            $this->assertSame('bar', $cached->get('foo'));
+            $this->assertSame('baz', $cached->get('bar'));
+        });
     }
 
-    public function testInvalidIdentifierPath()
+    private function withContainer(array $values, \Closure $suite)
     {
-        $container = new Container();
-        $container->set(['foo' => 'bar']);
-
-        $this->expectException(NotFoundExceptionInterface::class);
-        $container->getPath('foo.bar');
+        $suite($this->getContainer($values));
+        $suite($this->getCachedContainer($values));
     }
 
-    public function testInvalidBlueprint()
+    private function getCachedContainer(array $values)
+    {
+        $container = $this->getContainer($values);
+        $code = $container->getCacheFile();
+
+        return eval(substr($code, \strlen('<?php ')));
+    }
+
+    private function getContainer(array $values)
     {
         $container = new Container();
-        $container->setBlueprints(['stdClass' => ['foo' => 'bar']]);
 
-        $this->expectException(ContainerExceptionInterface::class);
-        $container->getPath('stdClass');
+        foreach ($values as $key => $value) {
+            if (!$value instanceof EntryInterface) {
+                $value = new MixedEntry($value);
+            }
+
+            $container->addEntry($key, $value);
+        }
+
+        return $container;
     }
 }
