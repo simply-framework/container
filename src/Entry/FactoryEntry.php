@@ -31,11 +31,7 @@ class FactoryEntry implements EntryInterface
         /** @var EntryInterface $class */
         [$class, $cacheParameters] = $parameters;
 
-        /** @var FactoryEntry $factory */
-        $factory = (new \ReflectionClass(static::class))->newInstanceWithoutConstructor();
-        $factory->entry = $class::createFromCacheParameters($cacheParameters);
-
-        return $factory;
+        return new static($class::createFromCacheParameters($cacheParameters));
     }
 
     /** {@inheritdoc} */

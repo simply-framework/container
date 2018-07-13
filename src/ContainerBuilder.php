@@ -56,40 +56,11 @@ class ContainerBuilder
     public function registerProvider(EntryProvider $provider): void
     {
         $class = \get_class($provider);
-        $reflection = new \ReflectionClass($class);
 
-        $this->container->addEntry($class, new CallableEntry([$class, 'initialize']));
+        $this->container->addEntry($class, new CallableEntry([\get_class($provider), 'initialize']));
 
-        foreach ($reflection->getMethods() as $method) {
-            $identifier = $this->getMethodIdentifier($method);
-
-            if ($identifier !== null) {
-                $this->container->addEntry($identifier, new ProviderEntry([$provider, $method->getName()]));
-            }
+        foreach ($provider->getMethods() as $identifier => $method) {
+            $this->container->addEntry($identifier, new ProviderEntry([$provider, $method]));
         }
-    }
-
-    /**
-     * Tells the identifier to use for the given provider method.
-     * @param \ReflectionMethod $method The provider method
-     * @return string|null The identifier for the method or null if not applicable
-     */
-    private function getMethodIdentifier(\ReflectionMethod $method): ?string
-    {
-        if (!$method->isPublic() || $method->isStatic()) {
-            return null;
-        }
-
-        if (strncmp($method->getName(), '__', 2) === 0) {
-            return null;
-        }
-
-        $type = $method->getReturnType();
-
-        if ($type === null || $type->isBuiltin()) {
-            return null;
-        }
-
-        return $type->getName();
     }
 }

@@ -3,6 +3,7 @@
 namespace Simply\Container\Entry;
 
 use Psr\Container\ContainerInterface;
+use Simply\Container\Exception\ContainerException;
 
 /**
  * Container entry that loads the value using a separate entry provider.
@@ -86,6 +87,10 @@ class ProviderEntry implements EntryInterface
     public function getValue(ContainerInterface $container)
     {
         $provider = $container->get($this->provider);
+
+        if (!\is_object($provider)) {
+            throw new ContainerException('Unexpected value returned for the provider object by the container');
+        }
 
         return $provider->{$this->method}($container);
     }

@@ -28,7 +28,7 @@ class MixedEntry implements EntryInterface
     /** {@inheritdoc} */
     public static function createFromCacheParameters(array $parameters): EntryInterface
     {
-        return new self($parameters[0]);
+        return new static($parameters[0]);
     }
 
     /** {@inheritdoc} */

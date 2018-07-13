@@ -28,11 +28,7 @@ class CallableEntry implements EntryInterface
     /** {@inheritdoc} */
     public static function createFromCacheParameters(array $parameters): EntryInterface
     {
-        /** @var CallableEntry $entry */
-        $entry = (new \ReflectionClass(static::class))->newInstanceWithoutConstructor();
-        $entry->callable = $parameters[0];
-
-        return $entry;
+        return new static($parameters[0]);
     }
 
     /** {@inheritdoc} */

@@ -19,4 +19,48 @@ abstract class AbstractEntryProvider implements EntryProvider
     {
         return new static();
     }
+
+    /**
+     * Returns provided list of all classes returned by the container methods.
+     * @return string[] Provided list of all classes returned by the container methods
+     */
+    public function getMethods(): array
+    {
+        $methods = [];
+        $reflection = new \ReflectionClass($this);
+
+        foreach ($reflection->getMethods() as $method) {
+            $identifier = $this->getMethodIdentifier($method);
+
+            if ($identifier !== null) {
+                $methods[$identifier] = $method->getName();
+            }
+        }
+
+        return $methods;
+    }
+
+    /**
+     * Tells the identifier to use for the given provider method.
+     * @param \ReflectionMethod $method The provider method
+     * @return string|null The identifier for the method or null if not applicable
+     */
+    private function getMethodIdentifier(\ReflectionMethod $method): ?string
+    {
+        if (!$method->isPublic() || $method->isStatic()) {
+            return null;
+        }
+
+        if (strncmp($method->getName(), '__', 2) === 0) {
+            return null;
+        }
+
+        $type = $method->getReturnType();
+
+        if ($type === null || $type->isBuiltin()) {
+            return null;
+        }
+
+        return $type->getName();
+    }
 }
