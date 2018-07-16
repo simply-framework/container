@@ -15,8 +15,8 @@ The container also implements container delegation pattern as described in
 [container-interop](https://github.com/container-interop/container-interop/blob/master/docs/Delegate-lookup.md)
 standard.
 
-NOTE: This package is part of personal experimental framework. No stable API or proper documentation is to be expected
-until the framework has proven itself in practical use cases.
+NOTE: This package is part of a framework that is still highly experimental in nature. Stable api or proper
+documentation are not to be expected until the framework has been tested in practice.
 
 API documentation is available at: https://docs.riimu.net/simply/container/
 
