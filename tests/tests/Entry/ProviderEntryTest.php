@@ -3,9 +3,7 @@
 namespace Simply\Container\Entry;
 
 use PHPUnit\Framework\TestCase;
-use Simply\Container\AbstractEntryProvider;
 use Simply\Container\Container;
-use Simply\Container\ContainerBuilder;
 use Simply\Container\Exception\ContainerException;
 
 /**
