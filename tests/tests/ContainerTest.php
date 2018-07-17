@@ -9,6 +9,7 @@ use Simply\Container\Entry\EntryInterface;
 use Simply\Container\Entry\FactoryEntry;
 use Simply\Container\Entry\MixedEntry;
 use Simply\Container\Entry\ProviderEntry;
+use Simply\Container\Entry\WiredEntry;
 use Simply\Container\Exception\ContainerException;
 use Simply\Container\Exception\NotFoundException;
 
@@ -20,7 +21,7 @@ use Simply\Container\Exception\NotFoundException;
  */
 class ContainerTest extends TestCase
 {
-    public function testStandardTypeValue()
+    public function testMixedEntry()
     {
         $this->withContainer([
             'foo' => 'bar',
@@ -29,7 +30,62 @@ class ContainerTest extends TestCase
         });
     }
 
-    public function testStandardTypeValueWithClosure()
+    public function testFactoryEntry()
+    {
+        $testClass = new class() {
+            public static function getDate(): \DateTime
+            {
+                return new \DateTime();
+            }
+        };
+
+        $callable = [\get_class($testClass), 'getDate'];
+
+        $this->withContainer([
+            'cached' => new CallableEntry($callable),
+            'uncached' => new FactoryEntry(new CallableEntry($callable)),
+        ], function (Container $container) {
+            $cached = $container->get('cached');
+            $uncached = $container->get('uncached');
+
+            $this->assertSame($cached, $container->get('cached'));
+            $this->assertNotSame($uncached, $container->get('uncached'));
+        });
+    }
+
+    public function testProviderEntry()
+    {
+        $testClass = new class() extends AbstractEntryProvider {
+            public function getFoo()
+            {
+                return 'foo';
+            }
+        };
+
+        $this->withContainer([
+            \get_class($testClass) => new CallableEntry([\get_class($testClass), 'initialize']),
+            'foo_value' => new ProviderEntry([$testClass, 'getFoo']),
+        ], function (Container $container) {
+            $this->assertSame('foo', $container->get('foo_value'));
+        });
+    }
+
+    public function testWiredEntry()
+    {
+        $time = '2010-10-10 10:00:00+0000';
+
+        $this->withContainer([
+            \DateTime::class => new WiredEntry(\DateTime::class, ['current_date']),
+            'current_date' => $time,
+        ], function (Container $container) use ($time) {
+            $date = $container->get(\DateTime::class);
+
+            $this->assertInstanceOf(\DateTime::class, $date);
+            $this->assertSame(strtotime($time), $date->getTimestamp());
+        });
+    }
+
+    public function testMixedEntryClosure()
     {
         $number = 1;
 
@@ -56,46 +112,6 @@ class ContainerTest extends TestCase
 
         $this->expectException(ContainerException::class);
         $container->getCacheFile();
-    }
-
-    public function testFactoryTypeValue()
-    {
-        $testClass = new class() {
-            public static function getDate(): \DateTime
-            {
-                return new \DateTime();
-            }
-        };
-
-        $callable = [\get_class($testClass), 'getDate'];
-
-        $this->withContainer([
-            'cached' => new CallableEntry($callable),
-            'uncached' => new FactoryEntry(new CallableEntry($callable)),
-        ], function (Container $container) {
-            $cached = $container->get('cached');
-            $uncached = $container->get('uncached');
-
-            $this->assertSame($cached, $container->get('cached'));
-            $this->assertNotSame($uncached, $container->get('uncached'));
-        });
-    }
-
-    public function testProviderTypeValue()
-    {
-        $testClass = new class() extends AbstractEntryProvider {
-            public function getFoo()
-            {
-                return 'foo';
-            }
-        };
-
-        $this->withContainer([
-            \get_class($testClass) => new CallableEntry([\get_class($testClass), 'initialize']),
-            'foo_value' => new ProviderEntry([$testClass, 'getFoo']),
-        ], function (Container $container) {
-            $this->assertSame('foo', $container->get('foo_value'));
-        });
     }
 
     public function testArrayAccess()
