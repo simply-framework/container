@@ -32,7 +32,7 @@ abstract class AbstractEntryProvider implements EntryProvider
         foreach ($reflection->getMethods() as $method) {
             $identifier = $this->getMethodIdentifier($method);
 
-            if ($identifier !== null) {
+            if (!\is_null($identifier)) {
                 $methods[$identifier] = $method->getName();
             }
         }
@@ -51,13 +51,13 @@ abstract class AbstractEntryProvider implements EntryProvider
             return null;
         }
 
-        if (strncmp($method->getName(), '__', 2) === 0) {
+        if (preg_match('/^__[^_]/', $method->getName())) {
             return null;
         }
 
         $type = $method->getReturnType();
 
-        if ($type === null || $type->isBuiltin()) {
+        if (!$type instanceof \ReflectionType || $type->isBuiltin()) {
             return null;
         }
 

@@ -116,7 +116,7 @@ TEMPLATE;
             return true;
         }
 
-        return $value === null || is_scalar($value);
+        return is_scalar($value) || \is_null($value);
     }
 
     /**

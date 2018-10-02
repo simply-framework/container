@@ -56,17 +56,20 @@ class ContainerTest extends TestCase
     public function testProviderEntry()
     {
         $testClass = new class() extends AbstractEntryProvider {
-            public function getFoo()
+            public function getNow()
             {
-                return 'foo';
+                return new \DateTime();
             }
         };
 
         $this->withContainer([
             \get_class($testClass) => new CallableEntry([\get_class($testClass), 'initialize']),
-            'foo_value' => new ProviderEntry([$testClass, 'getFoo']),
+            'now' => new ProviderEntry([$testClass, 'getNow']),
         ], function (Container $container) {
-            $this->assertSame('foo', $container->get('foo_value'));
+            $now = $container->get('now');
+
+            $this->assertInstanceOf(\DateTime::class, $now);
+            $this->assertSame($now, $container->get('now'));
         });
     }
 
@@ -82,6 +85,11 @@ class ContainerTest extends TestCase
 
             $this->assertInstanceOf(\DateTime::class, $date);
             $this->assertSame(strtotime($time), $date->getTimestamp());
+
+            $other = $container->get(\DateTime::class);
+
+            $this->assertInstanceOf(\DateTime::class, $other);
+            $this->assertSame($date, $other);
         });
     }
 
@@ -176,6 +184,23 @@ class ContainerTest extends TestCase
             $this->assertSame('bar', $cached->get('foo'));
             $this->assertSame('baz', $cached->get('bar'));
         });
+    }
+
+    public function testSortingOnCache()
+    {
+        $container = $this->getCachedContainer([
+            'b' => 'b_value',
+            'c' => 'c_value',
+            'a' => 'a_value',
+        ]);
+
+        $types = new \ReflectionProperty($container, 'types');
+        $types->setAccessible(true);
+        $parameters = new \ReflectionProperty($container, 'parameters');
+        $parameters->setAccessible(true);
+
+        $this->assertSame(['a', 'b', 'c'], array_keys($types->getValue($container)));
+        $this->assertSame(['a', 'b', 'c'], array_keys($parameters->getValue($container)));
     }
 
     private function withContainer(array $values, \Closure $suite)

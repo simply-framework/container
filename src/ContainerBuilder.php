@@ -92,7 +92,7 @@ class ContainerBuilder
     {
         $constructor = $reflection->getConstructor();
 
-        if ($constructor === null) {
+        if (!$constructor instanceof \ReflectionMethod) {
             return [];
         }
 
@@ -108,7 +108,7 @@ class ContainerBuilder
 
             $type = $parameter->getType();
 
-            if ($type === null || $type->isBuiltin()) {
+            if (!$type instanceof \ReflectionType || $type->isBuiltin()) {
                 throw new \InvalidArgumentException(
                     sprintf("Missing autowired parameter '%s' for '%s'", $name, $reflection->getName())
                 );
