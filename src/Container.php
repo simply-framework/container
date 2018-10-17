@@ -22,7 +22,7 @@ class Container implements ContainerInterface, \ArrayAccess
     /** @var array[] Information about cached container entries */
     protected $entries = [];
 
-    /** @var EntryInterface[] Cached entries used to resolve values */
+    /** @var EntryInterface[] Cached entry instances used to resolve values */
     private $entryCache;
 
     /** @var array Cached values for container entries */
@@ -81,18 +81,14 @@ TEMPLATE;
      */
     private function loadCacheParameters(): void
     {
-        foreach ($this->entries as $id => $data) {
-            if (!isset($this->entryCache[$id])) {
-                continue;
-            }
-
-            $parameters = $this->entryCache[$id]->getCacheParameters();
+        foreach ($this->entryCache as $id => $entry) {
+            $parameters = $entry->getCacheParameters();
 
             if (!$this->isConstantValue($parameters)) {
                 throw new ContainerException("Unable to cache entry '$id', the cache parameters are not static");
             }
 
-            $this->entries[$id] = [\get_class($this->entryCache[$id]), $parameters];
+            $this->entries[$id] = [\get_class($entry), $parameters];
         }
     }
 
@@ -124,11 +120,10 @@ TEMPLATE;
      */
     public function addEntry(string $id, EntryInterface $type): void
     {
-        if (isset($this->entries[$id])) {
+        if (isset($this[$id])) {
             throw new ContainerException("Entry for identifier '$id' already exists");
         }
 
-        $this->entries[$id] = [];
         $this->entryCache[$id] = $type;
     }
 
@@ -186,7 +181,7 @@ TEMPLATE;
      */
     public function has($id): bool
     {
-        return isset($this->entries[$id]);
+        return isset($this->entries[$id]) || isset($this->entryCache[$id]);
     }
 
     /**

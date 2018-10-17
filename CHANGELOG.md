@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.3.1] - 2018-10-17
+### Fixed
+- The container can now be modified on runtime without losing benefits of static array opcache optimization
+
 ## [0.3.0] - 2018-10-17
 ### Added
 - The `Container::getCacheFile()` now accepts an optional callable parameter for encoding values.
@@ -32,7 +36,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Initial development release
 
-[Unreleased]: https://github.com/simply-framework/container/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/simply-framework/container/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/simply-framework/container/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/simply-framework/container/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/simply-framework/container/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/simply-framework/container/compare/v0.1.0...v0.2.0
