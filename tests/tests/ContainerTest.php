@@ -194,13 +194,10 @@ class ContainerTest extends TestCase
             'a' => 'a_value',
         ]);
 
-        $types = new \ReflectionProperty($container, 'types');
-        $types->setAccessible(true);
-        $parameters = new \ReflectionProperty($container, 'parameters');
-        $parameters->setAccessible(true);
+        $entries = new \ReflectionProperty($container, 'entries');
+        $entries->setAccessible(true);
 
-        $this->assertSame(['a', 'b', 'c'], array_keys($types->getValue($container)));
-        $this->assertSame(['a', 'b', 'c'], array_keys($parameters->getValue($container)));
+        $this->assertSame(['a', 'b', 'c'], array_keys($entries->getValue($container)));
     }
 
     private function withContainer(array $values, \Closure $suite)

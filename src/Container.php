@@ -19,11 +19,8 @@ use Simply\Container\Exception\NotFoundException;
  */
 class Container implements ContainerInterface, \ArrayAccess
 {
-    /** @var string[] Lists the names of classes used by different container entries */
-    protected $types = [];
-
-    /** @var array[] Cached container entry parameters for initializing the entries */
-    protected $parameters = [];
+    /** @var array[] Information about cached container entries */
+    protected $entries = [];
 
     /** @var EntryInterface[] Cached entries used to resolve values */
     private $entryCache;
@@ -55,27 +52,27 @@ class Container implements ContainerInterface, \ArrayAccess
 
     /**
      * Returns PHP code for a cached container that can be loaded quickly on runtime.
+     * @param callable $encoder Encoder to turn the cached entry data into PHP code or null for default
      * @return string The PHP code for the cached container
      * @throws ContainerException If the container contains entries that cannot be cached
      */
-    public function getCacheFile(): string
+    public function getCacheFile(callable $encoder = null): string
     {
+        if (\is_null($encoder)) {
+            $encoder = function ($value): string {
+                return var_export($value, true);
+            };
+        }
+
         $this->loadCacheParameters();
+        ksort($this->entries);
+        $encoded = $encoder($this->entries);
 
-        ksort($this->types);
-        ksort($this->parameters);
-
-        $template = <<<'TEMPLATE'
+        return <<<TEMPLATE
 <?php return new class extends \Simply\Container\Container {
-    protected $types = ['TYPES'];
-    protected $parameters = ['PARAMETERS'];
+    protected \$entries = $encoded;
 };
 TEMPLATE;
-
-        return strtr($template, [
-            "['TYPES']" => var_export($this->types, true),
-            "['PARAMETERS']" => var_export($this->parameters, true),
-        ]);
     }
 
     /**
@@ -84,7 +81,7 @@ TEMPLATE;
      */
     private function loadCacheParameters(): void
     {
-        foreach ($this->types as $id => $class) {
+        foreach ($this->entries as $id => $data) {
             if (!isset($this->entryCache[$id])) {
                 continue;
             }
@@ -95,7 +92,7 @@ TEMPLATE;
                 throw new ContainerException("Unable to cache entry '$id', the cache parameters are not static");
             }
 
-            $this->parameters[$id] = $parameters;
+            $this->entries[$id] = [\get_class($this->entryCache[$id]), $parameters];
         }
     }
 
@@ -127,11 +124,11 @@ TEMPLATE;
      */
     public function addEntry(string $id, EntryInterface $type): void
     {
-        if (isset($this->types[$id])) {
+        if (isset($this->entries[$id])) {
             throw new ContainerException("Entry for identifier '$id' already exists");
         }
 
-        $this->types[$id] = \get_class($type);
+        $this->entries[$id] = [];
         $this->entryCache[$id] = $type;
     }
 
@@ -165,6 +162,7 @@ TEMPLATE;
      * @param string $id The entry identifier to look for
      * @return EntryInterface The container entry for the given identifier
      * @throws NotFoundExceptionInterface If the entry cannot be found
+     * @throws ContainerException If the cached type is not a valid entry type
      */
     private function getEntry(string $id): EntryInterface
     {
@@ -172,13 +170,13 @@ TEMPLATE;
             return $this->entryCache[$id];
         }
 
-        if (isset($this->types[$id])) {
-            /** @var EntryInterface $entryClass */
-            $entryClass = $this->types[$id];
-            return $entryClass::createFromCacheParameters($this->parameters[$id]);
+        if (!isset($this->entries[$id])) {
+            throw new NotFoundException("No entry was found for the identifier '$id'");
         }
 
-        throw new NotFoundException("No entry was found for the identifier '$id'");
+        /** @var EntryInterface $class */
+        [$class, $parameters] = $this->entries[$id];
+        return $class::createFromCacheParameters($parameters);
     }
 
     /**
@@ -188,7 +186,7 @@ TEMPLATE;
      */
     public function has($id): bool
     {
-        return isset($this->types[$id]);
+        return isset($this->entries[$id]);
     }
 
     /**
@@ -231,8 +229,7 @@ TEMPLATE;
     public function offsetUnset($offset): void
     {
         unset(
-            $this->types[$offset],
-            $this->parameters[$offset],
+            $this->entries[$offset],
             $this->entryCache[$offset],
             $this->valueCache[$offset]
         );
